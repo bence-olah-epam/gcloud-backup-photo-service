@@ -33,7 +33,6 @@ public class DocumentAPIGlobalSecondaryIndexExample {
     public static String tableName = "Issues";
 
     public static void main(String[] args) throws Exception {
-        deleteTable(tableName);
 
         createTable();
         loadData();
