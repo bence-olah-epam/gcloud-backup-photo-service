@@ -3,17 +3,37 @@ package com.olah.gcloud.backup.server.dynamodb;
 import com.olah.gcloud.backup.api.model.Photo;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.junit.Assert;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 
 import java.util.Set;
 
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class PhotoDaoTest {
 
-    PhotoDao photoDao = new PhotoDao("http://localhost:9000");
+    private PhotoDao photoDao = createPhotoDao();
+    private String environment = null;
+
+    private PhotoDao createPhotoDao() {
+        environment = System.getenv("ENVIRONMENT");
+        if(environment == null || environment.equals("local")) {
+            System.out.println("Using Local environment");
+            return new PhotoDao("http://localhost:9000", "");
+        }
+        else if ("prod".equals(environment)) {
+            System.out.println("Using prod environment");
+            return new PhotoDao("dynamodb.eu-central-1.amazonaws.com", "eu-central-1");
+        } else {
+            throw new IllegalStateException("Unknown environment");
+        }
+    }
 
     @Test
-    public void testtableCreation() {
-        photoDao.deleteTable();
+    public void _testtableCreation() {
+        if(environment.equals("local")) {
+            photoDao.deleteTable();
+        }
         photoDao.createTableIfNotExist();
     }
 

@@ -30,13 +30,13 @@ public class PhotoDao {
     /**
      * @param endPointUrl e.g.: http://localhost:8000
      */
-    public PhotoDao(String endPointUrl) {
+    public PhotoDao(String endPointUrl, String signingRegion) {
         if (endPointUrl == null) {
             throw new IllegalArgumentException("endpoint parameter cannot be null");
         }
 
         client = AmazonDynamoDBClientBuilder.standard()
-                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(endPointUrl, "us-west-2"))
+                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(endPointUrl, signingRegion))
                 .withCredentials(new ProfileCredentialsProvider("private"))
                 .build();
 
