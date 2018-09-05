@@ -1,4 +1,4 @@
-package com.olah.gcloud.backup.server.dynamodb;
+package com.olah.gcloud.backup.server.dao;
 
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.client.builder.AwsClientBuilder;
@@ -9,14 +9,28 @@ import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
 import com.amazonaws.services.dynamodbv2.model.*;
 import com.olah.gcloud.backup.api.model.Photo;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class PhotoDao {
-    public static final String PHOTO_TABLE_NAME = "DeviceStatus";
+    static {
+        final InputStream inputStream = PhotoDao.class.getResourceAsStream("/logging.properties");
+        try {
+            java.util.logging.LogManager.getLogManager().readConfiguration(inputStream);
+        } catch (final IOException e) {
+            java.util.logging.Logger.getAnonymousLogger().severe("Could not load default logging.properties file");
+            java.util.logging.Logger.getAnonymousLogger().severe(e.getMessage());
+        }
+    }
+
+    static final Logger LOGGER = LogManager.getLogger(PhotoDao.class);
 
     public static final String FILE_NAME = "FILE_NAME";
     public static final String FOLDER_PATH = "FOLDER_PATH";
@@ -24,30 +38,20 @@ public class PhotoDao {
 
     public static final String FOLDER_STATUS_INDEX = "FOLDER_STATUS_INDEX";
 
+    private final String tableName;
     private AmazonDynamoDB client;
     private final DynamoDB dynamoDB;
 
-    /**
-     * @param endPointUrl e.g.: http://localhost:8000
-     */
-    public PhotoDao(String endPointUrl, String signingRegion) {
-        if (endPointUrl == null) {
-            throw new IllegalArgumentException("endpoint parameter cannot be null");
-        }
-
-        client = AmazonDynamoDBClientBuilder.standard()
-                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(endPointUrl, signingRegion))
-                .withCredentials(new ProfileCredentialsProvider("private"))
-                .build();
-
+    public PhotoDao(AmazonDynamoDB client, String tableName) {
+        this.client = client;
+        this.tableName = tableName;
         dynamoDB = new DynamoDB(client);
     }
-
 
     public void createTableIfNotExist() {
         CreateTableRequest request = new CreateTableRequest();
 
-        request.setTableName(PHOTO_TABLE_NAME);
+        request.setTableName(tableName);
         request.withKeySchema(
                 new KeySchemaElement(FOLDER_PATH, KeyType.HASH),
                 new KeySchemaElement(FILE_NAME, KeyType.RANGE)
@@ -77,7 +81,7 @@ public class PhotoDao {
 
         dynamoDB.createTable(request);
         try {
-            dynamoDB.getTable(PHOTO_TABLE_NAME).waitForActive();
+            dynamoDB.getTable(tableName).waitForActive();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -94,7 +98,7 @@ public class PhotoDao {
         items.put(FOLDER_PATH, new AttributeValue().withS(photo.getFolderPath()));
         items.put(STATUS, new AttributeValue().withS(photo.getStatus()));
 
-        PutItemRequest putItemRequest = new PutItemRequest(PHOTO_TABLE_NAME, items);
+        PutItemRequest putItemRequest = new PutItemRequest(tableName, items);
         client.putItem(putItemRequest);
 
         System.out.println("Storing photo took:" + String.valueOf(System.currentTimeMillis() - start));
@@ -107,7 +111,7 @@ public class PhotoDao {
         keys.put(FILE_NAME, new AttributeValue().withS(fileName));
         keys.put(FOLDER_PATH, new AttributeValue().withS(folderPath));
 
-        GetItemResult getItemResult = client.getItem(PHOTO_TABLE_NAME, keys);
+        GetItemResult getItemResult = client.getItem(tableName, keys);
 
         Map<String, AttributeValue> item = getItemResult.getItem();
         if (item == null) {
@@ -129,7 +133,7 @@ public class PhotoDao {
     public Set<Photo> getPhotosByFolder(String folderPath) {
         long start = System.currentTimeMillis();
 
-        Table table = dynamoDB.getTable(PHOTO_TABLE_NAME);
+        Table table = dynamoDB.getTable(tableName);
         Index index = table.getIndex(FOLDER_STATUS_INDEX);
 
         QuerySpec spec = new QuerySpec()
@@ -149,7 +153,7 @@ public class PhotoDao {
     public Set<Photo> getPhotosByFolderAndStatus(String folderPath, Photo.StatusEnum status) {
         long start = System.currentTimeMillis();
 
-        Table table = dynamoDB.getTable(PHOTO_TABLE_NAME);
+        Table table = dynamoDB.getTable(tableName);
         Index index = table.getIndex(FOLDER_STATUS_INDEX);
 
         QuerySpec spec = new QuerySpec()
@@ -188,21 +192,21 @@ public class PhotoDao {
 
     // only for testing
     void deleteTable() {
-        System.out.println("Deleting table " + PHOTO_TABLE_NAME + "...");
+        System.out.println("Deleting table " + tableName + "...");
 
         boolean tableAlreadyExists =
-        StreamSupport.stream(dynamoDB.listTables().spliterator(), false).anyMatch(table -> table.getTableName().equals(PHOTO_TABLE_NAME));
+        StreamSupport.stream(dynamoDB.listTables().spliterator(), false).anyMatch(table -> table.getTableName().equals(tableName));
 
         if(!tableAlreadyExists) {
             return;
         }
 
-        Table table = dynamoDB.getTable(PHOTO_TABLE_NAME);
+        Table table = dynamoDB.getTable(tableName);
 
         table.delete();
 
         // Wait for table to be deleted
-        System.out.println("Waiting for " + PHOTO_TABLE_NAME + " to be deleted...");
+        System.out.println("Waiting for " + tableName + " to be deleted...");
         try {
             table.waitForDelete();
         } catch (InterruptedException e) {

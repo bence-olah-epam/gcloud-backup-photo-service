@@ -1,37 +1,25 @@
-package com.olah.gcloud.backup.server.dynamodb;
+package com.olah.gcloud.backup.server.dao;
 
 import com.olah.gcloud.backup.api.model.Photo;
+import com.olah.gcloud.backup.server.utils.ConfigProvider;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.junit.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+import sun.security.krb5.Config;
 
 import java.util.Set;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class PhotoDaoTest {
 
-    private PhotoDao photoDao = createPhotoDao();
-    private String environment = null;
+    private PhotoDao photoDao = new PhotoDao(ConfigProvider.getAmazonDynamoDB(), ConfigProvider.getTableName());
 
-    private PhotoDao createPhotoDao() {
-        environment = System.getenv("ENVIRONMENT");
-        if(environment == null || environment.equals("local")) {
-            System.out.println("Using Local environment");
-            return new PhotoDao("http://localhost:9000", "");
-        }
-        else if ("prod".equals(environment)) {
-            System.out.println("Using prod environment");
-            return new PhotoDao("dynamodb.eu-central-1.amazonaws.com", "eu-central-1");
-        } else {
-            throw new IllegalStateException("Unknown environment");
-        }
-    }
 
     @Test
     public void _testtableCreation() {
-        if(environment.equals("local")) {
+        if(!ConfigProvider.getEnvironment().equals(ConfigProvider.Environment.PROD)) {
             photoDao.deleteTable();
         }
         photoDao.createTableIfNotExist();
