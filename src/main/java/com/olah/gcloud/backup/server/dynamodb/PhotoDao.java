@@ -12,6 +12,7 @@ import com.olah.gcloud.backup.api.model.Photo;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class PhotoDao {
@@ -124,6 +125,27 @@ public class PhotoDao {
         return result;
     }
 
+
+    public Set<Photo> getPhotosByFolder(String folderPath) {
+        long start = System.currentTimeMillis();
+
+        Table table = dynamoDB.getTable(PHOTO_TABLE_NAME);
+        Index index = table.getIndex(FOLDER_STATUS_INDEX);
+
+        QuerySpec spec = new QuerySpec()
+                .withKeyConditionExpression(FOLDER_PATH +" = :v_folder_path ")
+                .withValueMap(new ValueMap()
+                        .withString(":v_folder_path", folderPath));
+
+        ItemCollection<QueryOutcome> items = index.query(spec);
+        Stream<Item> targetStream = itemCollectiontoStream(items);
+        Set<Photo> result = mapStreamToSet(targetStream);
+
+        System.out.println("getPhotosByFolder took :" + String.valueOf(System.currentTimeMillis() - start));
+
+        return result;
+    }
+
     public Set<Photo> getPhotosByFolderAndStatus(String folderPath, Photo.StatusEnum status) {
         long start = System.currentTimeMillis();
 
@@ -132,28 +154,35 @@ public class PhotoDao {
 
         QuerySpec spec = new QuerySpec()
                 .withKeyConditionExpression(FOLDER_PATH +" = :v_folder_path and " + STATUS + " = :v_status")
-                .withValueMap(new ValueMap().withString(":v_folder_path", folderPath)
+                .withValueMap(new ValueMap()
+                        .withString(":v_folder_path", folderPath)
                         .withString(":v_status", status.value()));
 
         ItemCollection<QueryOutcome> items = index.query(spec);
-        Iterator<Item> iterator = items.iterator();
+        Stream<Item> targetStream = itemCollectiontoStream(items);
+        Set<Photo> result = mapStreamToSet(targetStream);
 
-        Iterable<Item> iterable = () -> iterator;
+        System.out.println("getPhotosByFolderAndStatus took :" + String.valueOf(System.currentTimeMillis() - start));
 
-        java.util.stream.Stream<Item> targetStream = StreamSupport.stream(iterable.spliterator(), false);
+        return result;
+    }
 
-        Set<Photo> result = targetStream.map(item -> {
+    private Set<Photo> mapStreamToSet(Stream<Item> targetStream) {
+        return targetStream.map(item -> {
             Photo photo = new Photo();
             photo.setFileName(item.getString(FILE_NAME));
             photo.setFolderPath(item.getString(FOLDER_PATH));
             photo.setStatus(Photo.StatusEnum.fromValue(item.getString(STATUS)));
             return photo;
         }).collect(Collectors.toSet());
+    }
 
+    private Stream<Item> itemCollectiontoStream(ItemCollection<QueryOutcome> items) {
+        Iterator<Item> iterator = items.iterator();
 
-        System.out.println("getPhotosByFolderAndStatus took :" + String.valueOf(System.currentTimeMillis() - start));
+        Iterable<Item> iterable = () -> iterator;
 
-        return result;
+        return StreamSupport.stream(iterable.spliterator(), false);
     }
 
 

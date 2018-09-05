@@ -18,22 +18,19 @@ public class PhotoDaoTest {
     }
 
     @Test
-    public void testInsertAndQuery() {
+    public void getPhoto_onePhotoStored_photoCanBeStoredAndQueried() {
         Photo photo = new Photo().fileName("sample.jpg").folderPath("folder123").status(Photo.StatusEnum.NOT_SYNCED);
         photoDao.storeOrUpdatePhoto(photo);
 
 
         Photo returnedPhoto = photoDao.getPhoto("folder123", "sample.jpg");
 
-        System.out.println("Photo: " + photo);
-        System.out.println("Returned photo: " + returnedPhoto);
-
 
         Assert.assertTrue(EqualsBuilder.reflectionEquals(photo, returnedPhoto, false));
     }
 
     @Test
-    public void testSearchingByState() {
+    public void getPhotosByFolderAndStatus_singlePhotoStored_singlePhotoCanBeFoundByFolderAndStatus() {
         Photo photo = new Photo().fileName("sample.jpg").folderPath("folder123").status(Photo.StatusEnum.NOT_SYNCED);
         photoDao.storeOrUpdatePhoto(photo);
 
@@ -46,7 +43,7 @@ public class PhotoDaoTest {
 
 
     @Test
-    public void testSearchingByState_FilteringByDifferentStates() {
+    public void getPhotosByFolderAndStatus_multiplePhotosWithDifferentState_verifyFilteringByStateWorks() {
         String folderPath = "folder_multiple_hits";
         Photo photo = new Photo().fileName("sample1.jpg").folderPath(folderPath).status(Photo.StatusEnum.NOT_SYNCED);
         photoDao.storeOrUpdatePhoto(photo);
@@ -62,7 +59,7 @@ public class PhotoDaoTest {
 
 
     @Test
-    public void testUpdate_SamePhotoAddedMultipleTimes() {
+    public void getPhotosByFolderAndStatus_samePhotoUpdated_latestPhotoStateReturned() {
         String folderPath = "folder_update";
         Photo photo = new Photo().fileName("sample.jpg").folderPath(folderPath).status(Photo.StatusEnum.NOT_SYNCED);
         photoDao.storeOrUpdatePhoto(photo);
@@ -75,9 +72,8 @@ public class PhotoDaoTest {
         Assert.assertTrue(EqualsBuilder.reflectionEquals(photo, result.iterator().next(), false));
     }
 
-
     @Test
-    public void testSearchingByState_FilteringByFolder() {
+    public void getPhotosByFolderAndStatus_multipleFolderWithPhotos_onlySelectedPhotoFound() {
         String folderPath = "folder_filtering";
         Photo photo = new Photo().fileName("sample.jpg").folderPath(folderPath).status(Photo.StatusEnum.NOT_SYNCED);
         photoDao.storeOrUpdatePhoto(photo);
@@ -87,6 +83,74 @@ public class PhotoDaoTest {
         photoDao.storeOrUpdatePhoto(photo);
 
         Set<Photo> result = photoDao.getPhotosByFolderAndStatus(folderPath, Photo.StatusEnum.NOT_SYNCED);
+
+        Assert.assertEquals(2, result.size());
+    }
+
+
+
+
+
+
+
+
+
+
+    @Test
+    public void getPhotosByFolder_singlePhotoStored_singlePhotoCanBeFoundByFolderAndStatus() {
+        String folderPath = "folder1234";
+        Photo photo = new Photo().fileName("sample.jpg").folderPath(folderPath).status(Photo.StatusEnum.NOT_SYNCED);
+        photoDao.storeOrUpdatePhoto(photo);
+
+
+        Set<Photo> result = photoDao.getPhotosByFolder(folderPath);
+
+        Assert.assertTrue(EqualsBuilder.reflectionEquals(photo, result.iterator().next(), false));
+        Assert.assertEquals(1, result.size());
+    }
+
+
+    @Test
+    public void getPhotosByFolder_multiplePhotosWithDifferentState_verifyFilteringByStateWorks() {
+        String folderPath = "folder_multiple_hits_2";
+        Photo photo = new Photo().fileName("sample1.jpg").folderPath(folderPath).status(Photo.StatusEnum.NOT_SYNCED);
+        photoDao.storeOrUpdatePhoto(photo);
+        photo = new Photo().fileName("sample2.jpg").folderPath(folderPath).status(Photo.StatusEnum.FAILED);
+        photoDao.storeOrUpdatePhoto(photo);
+        photo = new Photo().fileName("sample3.jpg").folderPath(folderPath).status(Photo.StatusEnum.NOT_SYNCED);
+        photoDao.storeOrUpdatePhoto(photo);
+
+        Set<Photo> result = photoDao.getPhotosByFolder(folderPath);
+
+        Assert.assertEquals(3, result.size());
+    }
+
+
+    @Test
+    public void getPhotosByFolder_samePhotoUpdated_latestPhotoStateReturned() {
+        String folderPath = "folder_update_2";
+        Photo photo = new Photo().fileName("sample.jpg").folderPath(folderPath).status(Photo.StatusEnum.NOT_SYNCED);
+        photoDao.storeOrUpdatePhoto(photo);
+        photo = new Photo().fileName("sample.jpg").folderPath(folderPath).status(Photo.StatusEnum.FAILED);
+        photoDao.storeOrUpdatePhoto(photo);
+
+        Set<Photo> result = photoDao.getPhotosByFolder(folderPath);
+
+        Assert.assertEquals(1, result.size());
+        Assert.assertTrue(EqualsBuilder.reflectionEquals(photo, result.iterator().next(), false));
+    }
+
+    @Test
+    public void getPhotosByFolder_multipleFolderWithPhotos_onlySelectedPhotoFound() {
+        String folderPath = "folder_filtering_2";
+        Photo photo = new Photo().fileName("sample.jpg").folderPath(folderPath).status(Photo.StatusEnum.NOT_SYNCED);
+        photoDao.storeOrUpdatePhoto(photo);
+        photo = new Photo().fileName("sample2.jpg").folderPath(folderPath).status(Photo.StatusEnum.NOT_SYNCED);
+        photoDao.storeOrUpdatePhoto(photo);
+        photo = new Photo().fileName("sample.jpg").folderPath("different_folder").status(Photo.StatusEnum.NOT_SYNCED);
+        photoDao.storeOrUpdatePhoto(photo);
+
+        Set<Photo> result = photoDao.getPhotosByFolder(folderPath);
 
         Assert.assertEquals(2, result.size());
     }
