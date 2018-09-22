@@ -1,4 +1,4 @@
-package com.olah.gcloud.backup.server.utils;
+package com.olah.gcloud.backup.syncer.utils;
 
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.client.builder.AwsClientBuilder;

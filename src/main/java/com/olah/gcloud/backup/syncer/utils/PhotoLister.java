@@ -1,4 +1,4 @@
-package com.olah.gcloud.backup.server.utils;
+package com.olah.gcloud.backup.syncer.utils;
 
 import java.io.IOException;
 import java.nio.file.Files;

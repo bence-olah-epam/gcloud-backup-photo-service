@@ -1,20 +1,20 @@
 package com.olah.gcloud.backup.server.dao;
 
 import com.olah.gcloud.backup.api.model.Photo;
-import com.olah.gcloud.backup.server.utils.ConfigProvider;
+import com.olah.gcloud.backup.syncer.utils.ConfigProvider;
 import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-import sun.security.krb5.Config;
 
 import java.util.Set;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class PhotoDaoTest {
 
-    private PhotoDao photoDao = new PhotoDao(ConfigProvider.getAmazonDynamoDB(), ConfigProvider.getTableName());
+    private static PhotoDao photoDao = new PhotoDao(ConfigProvider.getAmazonDynamoDB(), ConfigProvider.getTableName());
 
 
     @Test
@@ -161,5 +161,13 @@ public class PhotoDaoTest {
         Set<Photo> result = photoDao.getPhotosByFolder(folderPath);
 
         Assert.assertEquals(2, result.size());
+    }
+
+
+    @AfterClass
+    public static void deleteTable() {
+        if(!ConfigProvider.getEnvironment().equals(ConfigProvider.Environment.PROD)) {
+            photoDao.deleteTable();
+        }
     }
 }

@@ -48,6 +48,7 @@ public class PhotoDao {
         dynamoDB = new DynamoDB(client);
     }
 
+
     public void createTableIfNotExist() {
         CreateTableRequest request = new CreateTableRequest();
 
