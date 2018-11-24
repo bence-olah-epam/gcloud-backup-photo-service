@@ -91,6 +91,8 @@ public class PhotoDao {
 
     public void storeOrUpdatePhoto(Photo photo) {
         System.out.println("Storing photo...");
+        System.out.println("Photo details: " + photo);
+
         long start = System.currentTimeMillis();
 
         Map<String, AttributeValue> items = new HashMap<>();

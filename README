@@ -1,5 +1,5 @@
 How to run Dynamodb locally on docker
 
 * docker run -v "$PWD":/dynamodb_local_db -p 9000:8000 cnadiminti/dynamodb-local:latest
-* aws dynamodb create-table --table-name myTable --attribute-definitions AttributeName=id,AttributeType=S --key-schema AttributeName=id,KeyType=HASH --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 --endpoint-url http://0.0.0.0:9000
+* aws dynamodb create-tableü --table-name myTable --attribute-definitions AttributeName=id,AttributeType=S --key-schema AttributeName=id,KeyType=HASH --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 --endpoint-url http://0.0.0.0:9000
 * https://hub.docker.com/r/cnadiminti/dynamodb-local/

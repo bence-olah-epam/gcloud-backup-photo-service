@@ -1,5 +1,6 @@
 package com.olah.gcloud.backup.syncer.utils;
 
+import com.amazonaws.auth.*;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
@@ -35,9 +36,18 @@ public class ConfigProvider {
         }
 
         return AmazonDynamoDBClientBuilder.standard()
+                .withCredentials(getCredentialsProvider())
                 .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(endPointUrl, signingRegion))
-                .withCredentials(new ProfileCredentialsProvider("private"))
                 .build();
+    }
+
+    private static AWSCredentialsProvider getCredentialsProvider() {
+        Environment environment = getEnvironment();
+        switch (environment) {
+            case LOCAL:
+                return new AWSStaticCredentialsProvider(new BasicAWSCredentials("",""));
+        }
+        return new EnvironmentVariableCredentialsProvider();
     }
 
     private static String getEnvironmentVariable(String key) {
