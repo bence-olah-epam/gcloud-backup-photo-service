@@ -4,6 +4,8 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.olah.gcloud.backup.api.DefaultApi;
 import com.olah.gcloud.backup.api.model.Photo;
 import com.olah.gcloud.backup.api.model.PhotoList;
@@ -16,6 +18,7 @@ import org.json.simple.parser.ParseException;
 
 
 import java.io.*;
+import java.util.LinkedList;
 import java.util.Set;
 
 public class GetPhotoListLambda implements DefaultApi, RequestStreamHandler {
@@ -47,6 +50,7 @@ public class GetPhotoListLambda implements DefaultApi, RequestStreamHandler {
 
     private PhotoList getPhotoList(Set<Photo> photos) {
         PhotoList result = new PhotoList();
+        result.setData(new LinkedList<>());
         photos.forEach(y -> result.addDataItem(y));
         return result;
     }
@@ -74,18 +78,17 @@ public class GetPhotoListLambda implements DefaultApi, RequestStreamHandler {
                     photoQueryRequest.setStatus(PhotoQueryRequest.StatusEnum.fromValue((String) body.get("status")));
                 }
 
-                getPhotoByFolderAndFileName(photoQueryRequest);
+                PhotoList photoByFolderAndFileName = getPhotoByFolderAndFileName(photoQueryRequest);
+                Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
-
-                JSONObject responseBody = new JSONObject();
-                responseBody.put("input", event.toJSONString());
 
                 JSONObject headerJson = new JSONObject();
+                headerJson.put("Content-Type", "application/json");
 
                 responseJson.put("isBase64Encoded", false);
                 responseJson.put("statusCode", "200");
                 responseJson.put("headers", headerJson);
-                responseJson.put("body", responseBody.toString());
+                responseJson.put("body", gson.toJson(photoByFolderAndFileName).replace("SYNCED","synced"));
             }
         } catch (ParseException e) {
             e.printStackTrace();

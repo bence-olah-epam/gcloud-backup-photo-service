@@ -50,7 +50,7 @@ public class AddOrUpdatePhotoLambda implements DefaultApi, RequestStreamHandler 
                 Photo photo = new Photo();
 
                 photo.setFolderPath((String) body.get("folderPath"));
-                photo.setStatus(Photo.StatusEnum.valueOf((String) body.get("status")));
+                photo.setStatus(Photo.StatusEnum.fromValue((String) body.get("status")));
                 photo.setFileName((String) body.get("fileName"));
 
                 addOrUpdatePhoto(photo);
